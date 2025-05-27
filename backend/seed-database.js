@@ -6,6 +6,18 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
+/**
+ * SEED DATABASE SCRIPT
+ * 
+ * CHÚ Ý: Script này chỉ khởi tạo dữ liệu môn học.
+ * Dữ liệu người dùng (admin, giáo viên, học sinh) sẽ được tạo thông qua:
+ * 1. Đăng ký trực tiếp trên ứng dụng web
+ * 2. Tạo người dùng trong Keycloak
+ * 
+ * Các bảng liên quan đến người dùng như teacher_subject_assignments, 
+ * student_enrollments, grades sẽ được điền sau khi có người dùng thực trong hệ thống.
+ */
+
 // PostgreSQL connection
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
@@ -16,7 +28,7 @@ const pool = new Pool({
 });
 
 async function seedDatabase() {
-  console.log('Seeding database...');
+  console.log('Seeding database with subject data only...');
   
   try {
     // Read SQL file
@@ -36,7 +48,8 @@ async function seedDatabase() {
       // Commit transaction
       await client.query('COMMIT');
       
-      console.log('Database seeded successfully!');
+      console.log('Database seeded successfully with subject data!');
+      console.log('NOTE: User data should be created through Keycloak or the web application.');
     } catch (error) {
       // Rollback in case of error
       await client.query('ROLLBACK');

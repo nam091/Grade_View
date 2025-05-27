@@ -9,7 +9,8 @@
     "build": "tsc",
     "test": "jest",
     "seed": "node seed-database.js",
-    "migrate": "ts-node src/config/runMigrations.ts"
+    "migrate": "ts-node src/config/runMigrations.ts",
+    "init-db": "node init-db.js"
   },
   "dependencies": {
     "@types/sequelize": "^4.28.20",
