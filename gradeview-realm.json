@@ -1,0 +1,142 @@
+{
+  "realm": "gradeview",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "requiredCredentials": ["password"],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "User role"
+      },
+      {
+        "name": "admin",
+        "description": "Admin role"
+      },
+      {
+        "name": "teacher",
+        "description": "Teacher role"
+      },
+      {
+        "name": "student",
+        "description": "Student role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "gradeview-backend",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "hNP9mTqVQvJhMLStG5ybI7qZn47rgy93",
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@example.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "admin1",
+      "enabled": true,
+      "email": "admin1@example.com",
+      "firstName": "Admin",
+      "lastName": "One",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin1",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"],
+      "attributes": {
+        "keycloakId": ["admin1-uuid"]
+      }
+    },
+    {
+      "username": "teacher",
+      "enabled": true,
+      "email": "teacher@example.com",
+      "firstName": "Teacher",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "teacher",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["teacher"]
+    },
+    {
+      "username": "teacher1",
+      "enabled": true,
+      "email": "teacher1@example.com",
+      "firstName": "Teacher",
+      "lastName": "One",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "teacher1",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["teacher"],
+      "attributes": {
+        "keycloakId": ["teacher1-uuid"]
+      }
+    },
+    {
+      "username": "student",
+      "enabled": true,
+      "email": "student@example.com",
+      "firstName": "Student",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "student",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["student"]
+    },
+    {
+      "username": "student1",
+      "enabled": true,
+      "email": "student1@example.com",
+      "firstName": "Student",
+      "lastName": "One",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "student1",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["student"],
+      "attributes": {
+        "keycloakId": ["student1-uuid"]
+      }
+    }
+  ]
+} 

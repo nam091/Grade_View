@@ -1,0 +1,22 @@
+# The database vendor.
+db=postgres
+
+# The username of the database user.
+db-username=postgres
+
+# The password of the database user.
+db-password=3147
+
+# The full database JDBC URL.
+db-url=jdbc:postgresql://localhost:5432/keycloak
+
+# Observability
+# If the server should expose healthcheck endpoints.
+health-enabled=true
+
+# If the server should expose metrics endpoints.
+metrics-enabled=true
+
+# HTTP/TLS settings
+http-enabled=true
+https-required=false 
