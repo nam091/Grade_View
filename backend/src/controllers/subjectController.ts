@@ -248,6 +248,16 @@ export const enrollStudent = async (req: Request, res: Response) => {
   try {
     const { studentId, subjectId, academicYear } = req.body;
     
+    console.log('Nhận yêu cầu đăng ký sinh viên:', { studentId, subjectId, academicYear });
+    
+    // Validate input
+    if (!studentId || !subjectId || !academicYear) {
+      return res.status(400).json({ 
+        message: 'Thiếu thông tin bắt buộc', 
+        required: ['studentId', 'subjectId', 'academicYear'] 
+      });
+    }
+    
     const student = await User.findByPk(studentId);
     if (!student) {
       return res.status(404).json({ message: 'Học sinh không tồn tại' });
@@ -262,19 +272,38 @@ export const enrollStudent = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Môn học không tồn tại' });
     }
     
-    const [enrollment, created] = await StudentEnrollment.findOrCreate({
-      where: { studentId, subjectId, academicYear },
-      defaults: { studentId, subjectId, academicYear }
+    // Check if student is already enrolled
+    const existingEnrollment = await StudentEnrollment.findOne({
+      where: { studentId, subjectId, academicYear }
     });
     
-    if (!created) {
-      return res.status(409).json({ message: 'Học sinh đã đăng ký môn học này trong năm học đã chọn' });
+    if (existingEnrollment) {
+      console.log(`Sinh viên ${studentId} đã đăng ký môn học ${subjectId} trong năm học ${academicYear}`);
+      return res.status(409).json({ 
+        message: 'Học sinh đã đăng ký môn học này trong năm học đã chọn',
+        enrollment: existingEnrollment
+      });
     }
     
-    return res.status(201).json(enrollment);
+    // Create new enrollment
+    const enrollment = await StudentEnrollment.create({
+      studentId,
+      subjectId,
+      academicYear
+    });
+    
+    console.log(`Đã tạo đăng ký mới cho sinh viên ${studentId} trong môn học ${subjectId}`);
+    
+    return res.status(201).json({
+      message: 'Đăng ký thành công',
+      enrollment
+    });
   } catch (error) {
     console.error('Lỗi đăng ký học sinh:', error);
-    return res.status(500).json({ message: 'Không thể đăng ký học sinh', error });
+    return res.status(500).json({ 
+      message: 'Không thể đăng ký học sinh', 
+      error: error instanceof Error ? error.message : 'Lỗi không xác định'
+    });
   }
 };
 

@@ -52,13 +52,16 @@ export default function EnrollStudentsDialog({ subject, children }: EnrollStuden
           // Fetch current enrollments for this subject
           const enrolledStudents = await SubjectAPI.getEnrolledStudents(subject.id);
           
-          // Map students and mark those already enrolled
-          const enhancedStudents = allStudents.map((student: any) => ({
+          // Filter out already enrolled students
+          const unregisteredStudents = allStudents.filter(
+            (student: any) => !enrolledStudents.some((e: any) => e.id.toString() === student.id.toString())
+          ).map((student: any) => ({
             ...student,
-            isEnrolled: enrolledStudents.some((e: any) => e.id.toString() === student.id.toString())
+            isEnrolled: false
           }));
           
-          setStudents(enhancedStudents);
+          console.log(`Lọc ra ${unregisteredStudents.length} sinh viên chưa đăng ký từ ${allStudents.length} sinh viên`);
+          setStudents(unregisteredStudents);
         } catch (error) {
           console.error('Lỗi tải sinh viên:', error);
           toast({
@@ -81,7 +84,7 @@ export default function EnrollStudentsDialog({ subject, children }: EnrollStuden
     student.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Toggle enrollment status
+  // Toggle enrollment status for selection
   const toggleEnrollment = (studentId: string) => {
     setStudents(prevStudents => 
       prevStudents.map(student => 
@@ -97,11 +100,22 @@ export default function EnrollStudentsDialog({ subject, children }: EnrollStuden
     try {
       setSaving(true);
       
-      // Get all enrolled students
-      const enrolledStudents = students.filter(student => student.isEnrolled);
+      // Get students that are now checked (since all shown students are unenrolled)
+      const newEnrollments = students.filter(student => student.isEnrolled);
       
-      // Process all enrollments
-      const enrollmentPromises = enrolledStudents.map(student => 
+      console.log("Sinh viên cần đăng ký:", newEnrollments);
+      
+      if (newEnrollments.length === 0) {
+        toast({
+          title: "Không có sinh viên được chọn",
+          description: "Vui lòng chọn ít nhất một sinh viên để đăng ký.",
+        });
+        setSaving(false);
+        return;
+      }
+      
+      // Process only new enrollments
+      const enrollmentPromises = newEnrollments.map(student => 
         SubjectAPI.enrollStudent({
           studentId: student.id,
           subjectId: subject.id,
@@ -113,7 +127,7 @@ export default function EnrollStudentsDialog({ subject, children }: EnrollStuden
       
       toast({
         title: "Sinh viên đã được đăng ký",
-        description: `Đã đăng ký thành công ${enrolledStudents.length} sinh viên trong ${subject.name}`,
+        description: `Đã đăng ký thành công ${newEnrollments.length} sinh viên vào môn ${subject.name}`,
       });
       
       setOpen(false);
@@ -141,7 +155,7 @@ export default function EnrollStudentsDialog({ subject, children }: EnrollStuden
              Đăng ký sinh viên trong môn học {subject.name}
           </DialogTitle>
           <DialogDescription>
-            Chọn sinh viên để đăng ký trong môn học này cho năm học {academicYear}.
+            Chỉ hiển thị sinh viên chưa đăng ký môn học này. Chọn sinh viên để đăng ký cho năm học {academicYear}.
           </DialogDescription>
         </DialogHeader>
         
@@ -185,7 +199,7 @@ export default function EnrollStudentsDialog({ subject, children }: EnrollStuden
               ) : (
                 <p className="text-center text-muted-foreground py-8">
                   {students.length === 0
-                    ? "Không tìm thấy sinh viên trong hệ thống."
+                    ? "Tất cả sinh viên đã được đăng ký vào môn học này."
                     : "Không có sinh viên phù hợp với tiêu chí tìm kiếm của bạn."}
                 </p>
               )}
@@ -208,7 +222,7 @@ export default function EnrollStudentsDialog({ subject, children }: EnrollStuden
             ) : (
               <>
                 <CheckCheck className="h-4 w-4" />
-                Đang lưu...
+                Đăng ký sinh viên
               </>
             )}
           </Button>

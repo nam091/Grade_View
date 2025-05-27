@@ -37,11 +37,11 @@ export default function GradeDisplayTable({ grades, title = "Your Grades", descr
   const calculateGPA = () => {
     // Calculate GPA based on scores from 0-10 scale
     let totalPoints = 0;
-    const numericGrades = grades.filter(g => typeof g.score === 'number');
+    const numericGrades = grades.filter(g => typeof (g.score || g.grade) === 'number');
 
     if (numericGrades.length === 0) return "N/A";
 
-    totalPoints = numericGrades.reduce((sum, g) => sum + g.score, 0);
+    totalPoints = numericGrades.reduce((sum, g) => sum + (g.score || g.grade), 0);
     return (totalPoints / numericGrades.length).toFixed(2);
   };
 
@@ -77,7 +77,7 @@ export default function GradeDisplayTable({ grades, title = "Your Grades", descr
               return (
                 <TableRow key={grade.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium py-3">{subjectName}</TableCell>
-                  <TableCell className="text-center py-3">{grade.score}</TableCell>
+                  <TableCell className="text-center py-3">{grade.score || grade.grade}</TableCell>
                   <TableCell className="text-center py-3">{grade.term || 'N/A'}</TableCell>
                   <TableCell className="py-3">{teacherName}</TableCell>
                   <TableCell className="py-3">{grade.comment || '-'}</TableCell>

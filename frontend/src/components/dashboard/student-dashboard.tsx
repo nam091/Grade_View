@@ -19,14 +19,24 @@ export default function StudentDashboard() {
     async function fetchData() {
       if (user?.id) {
         try {
-          const [gradesData, subjectsData] = await Promise.all([
+          const [gradesData, enrollmentsData] = await Promise.all([
             GradeAPI.getAllForStudent(user.id),
             SubjectAPI.getStudentSubjects(user.id)
           ]);
+          console.log("Dữ liệu điểm:", gradesData);
+          console.log("Dữ liệu đăng ký môn học:", enrollmentsData);
+          
           setStudentGrades(gradesData);
-          setSubjects(subjectsData);
+          
+          // Xử lý enrollments để lấy danh sách subjects
+          const subjectsFromEnrollments = enrollmentsData.map((enrollment: any) => {
+            return enrollment.Subject || enrollment.subject;
+          }).filter((subject: any) => subject !== null);
+          
+          console.log("Danh sách môn học từ enrollments:", subjectsFromEnrollments);
+          setSubjects(subjectsFromEnrollments);
         } catch (error) {
-          console.error("Error fetching student data:", error);
+          console.error("Lỗi khi tải dữ liệu sinh viên:", error);
         } finally {
           setLoading(false);
         }
@@ -38,9 +48,9 @@ export default function StudentDashboard() {
   
   const calculateAverageGrade = () => {
     if (!studentGrades.length) return "N/A";
-    const numericGrades = studentGrades.filter(g => typeof g.grade === 'number');
+    const numericGrades = studentGrades.filter(g => typeof (g.score || g.grade) === 'number');
     if (!numericGrades.length) return "N/A (Không có điểm số)";
-    const totalPoints = numericGrades.reduce((sum, g) => sum + (g.grade as number), 0);
+    const totalPoints = numericGrades.reduce((sum, g) => sum + ((g.score || g.grade) as number), 0);
     return (totalPoints / numericGrades.length).toFixed(2);
   };
   

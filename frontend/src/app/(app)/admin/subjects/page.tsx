@@ -30,19 +30,22 @@ export default function AdminSubjectsPage() {
       console.log("Đã tải dữ liệu giáo viên:", teachers);
       
       // Map teacher names to subjects
-      const enhancedSubjects = subjectsData.map((subject: Subject) => {
-        // Find teacher assigned to this subject
-        const teacherId = subject.teacherId;
-        console.log(`ID giáo viên cho môn học ${subject.name}:`, teacherId);
+      const enhancedSubjects = subjectsData.map((subject: any) => {
+        // Find teacher assigned to this subject from teacherAssignments
+        const teacherAssignments = subject.teacherAssignments || [];
+        console.log(`Phân công giáo viên cho môn học ${subject.name}:`, teacherAssignments);
         
-        // Find teacher details
-        const teacher = teachers.find((t: User) => t.id?.toString() === teacherId);
-        console.log(`Tìm thấy giáo viên cho môn học ${subject.name}:`, teacher?.name || "Không có");
+        // Get the first teacher assignment (assuming one teacher per subject)
+        const assignment = teacherAssignments[0];
+        const teacherId = assignment?.teacherId?.toString() || "";
+        const teacherName = assignment?.teacher?.name || "";
+        
+        console.log(`Tìm thấy giáo viên cho môn học ${subject.name}:`, teacherName || "Không có");
         
         return {
           ...subject,
-          teacherId: teacherId || "",
-          teacherName: teacher ? teacher.name : '',
+          teacherId: teacherId,
+          teacherName: teacherName,
         };
       });
       
@@ -63,15 +66,18 @@ export default function AdminSubjectsPage() {
 
   const handleSubjectAdded = async (newSubject: Subject) => {
     try {
-      await SubjectAPI.create(newSubject);
+      // Create subject first
+      const createdSubject = await SubjectAPI.create(newSubject);
+      console.log("Môn học đã được tạo:", createdSubject);
       
       // If teacher was assigned, create a teacher assignment
       if (newSubject.teacherId) {
         await SubjectAPI.assignTeacher({
           teacherId: newSubject.teacherId,
-          subjectId: newSubject.id,
+          subjectId: createdSubject.id || newSubject.id,
           academicYear: '2023-2024' // This should be configurable
         });
+        console.log("Đã gán giáo viên cho môn học");
       }
       
       // Refresh subjects list with updated teacher info

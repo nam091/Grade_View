@@ -24,9 +24,15 @@ export interface Grade {
   studentName?: string; // Denormalized
   subjectId: string;
   subjectName?: string; // Denormalized
-  grade: number | string; // e.g. 85 or 'A' or 'Pass'
+  score: number; // Backend uses 'score', not 'grade'
+  grade?: number | string; // Keep for backward compatibility  
+  term?: string;
+  academicYear?: string;
+  comment?: string;
   credits?: number; // Denormalized from subject
   teacherName?: string; // Denormalized from subject's teacher
+  subject?: Subject; // Include subject relation
+  teacher?: User; // Include teacher relation
 }
 
 // For teacher grade input
