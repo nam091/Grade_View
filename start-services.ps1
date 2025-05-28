@@ -1,219 +1,50 @@
-# Script chạy tất cả dịch vụ của GradeView
-# Chạy bằng cách: .\start-services.ps1
+# Script đơn giản để chạy GradeView
+Write-Host "Khởi động GradeView..." -ForegroundColor Green
 
-# Tạo thư mục logs nếu chưa tồn tại
-if (-not (Test-Path -Path ".\logs")) {
-    New-Item -ItemType Directory -Path ".\logs"
-}
+# Tạo thư mục logs
+if (-not (Test-Path "logs")) { mkdir logs }
 
-# Kiểm tra PostgreSQL đã được cài đặt chưa
-function Test-PostgreSQL {
-    try {
-        $pgVersion = (& psql --version) 2>$null
-        if ($pgVersion) {
-            Write-Host "PostgreSQL đã được cài đặt: $pgVersion" -ForegroundColor Green
-            return $true
-        }
-    } catch {
-        Write-Host "PostgreSQL chưa được cài đặt hoặc không có trong PATH" -ForegroundColor Yellow
-        return $false
-    }
-}
+# Đặt biến môi trường
+$env:PGPASSWORD = "3147"
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-23"
 
-# Kiểm tra Keycloak
-function Test-Keycloak {
-    if (Test-Path -Path ".\keycloak-26.2.4\bin\kc.bat") {
-        Write-Host "Keycloak được tìm thấy" -ForegroundColor Green
-        return $true
-    } else {
-        Write-Host "Không tìm thấy Keycloak trong thư mục keycloak-26.2.4" -ForegroundColor Yellow
-        return $false
-    }
-}
+Write-Host "1. Khởi động Keycloak..." -ForegroundColor Yellow
+Start-Process -FilePath ".\keycloak-26.2.4\bin\kc.bat" -ArgumentList "start-dev", "--http-port=8080" -WindowStyle Minimized
 
-# Kiểm tra Node.js
-function Test-NodeJS {
-    try {
-        $nodeVersion = (& node --version) 2>$null
-        if ($nodeVersion) {
-            Write-Host "Node.js đã được cài đặt: $nodeVersion" -ForegroundColor Green
-            return $true
-        }
-    } catch {
-        Write-Host "Node.js chưa được cài đặt hoặc không có trong PATH" -ForegroundColor Yellow
-        return $false
-    }
-}
+Write-Host "2. Chờ Keycloak (30s)..." -ForegroundColor Yellow
+Start-Sleep 30
 
-# Kiểm tra môi trường
-if (-not (Test-PostgreSQL)) {
-    Write-Host "Vui lòng cài đặt PostgreSQL trước khi chạy script này" -ForegroundColor Red
-    exit
-}
+Write-Host "3. Khởi động Backend..." -ForegroundColor Yellow
+Start-Process -FilePath "cmd" -ArgumentList "/c", "cd backend && npm start" -WindowStyle Minimized
 
-if (-not (Test-Keycloak)) {
-    Write-Host "Vui lòng đảm bảo Keycloak được giải nén đúng vị trí" -ForegroundColor Red
-    exit
-}
+Write-Host "4. Chờ Backend (10s)..." -ForegroundColor Yellow
+Start-Sleep 10
 
-if (-not (Test-NodeJS)) {
-    Write-Host "Vui lòng cài đặt Node.js trước khi chạy script này" -ForegroundColor Red
-    exit
-}
+Write-Host "5. Khởi động Frontend..." -ForegroundColor Yellow
+Write-Host "   Nếu Frontend bị kẹt, hãy mở terminal mới và chạy:" -ForegroundColor Red
+Write-Host "   cd frontend && npm install && npm run dev" -ForegroundColor Red
 
-# Tạo và cấu hình cơ sở dữ liệu
-function Setup-Database {
-    Write-Host "Chuẩn bị cơ sở dữ liệu..." -ForegroundColor Cyan
-    
-    # Kiểm tra cơ sở dữ liệu gradeview
-    $dbExists = $false
-    $result = (& psql -U postgres -c "SELECT 1 FROM pg_database WHERE datname='gradeview'" -t) 2>$null
-    if ($result -and $result.Trim() -eq "1") {
-        $dbExists = $true
-        Write-Host "Cơ sở dữ liệu gradeview đã tồn tại" -ForegroundColor Green
-    }
-    
-    if (-not $dbExists) {
-        Write-Host "Tạo cơ sở dữ liệu gradeview..." -ForegroundColor Yellow
-        & psql -U postgres -c "CREATE DATABASE gradeview"
-    }
-    
-    # Kiểm tra cơ sở dữ liệu keycloak
-    $dbExists = $false
-    $result = (& psql -U postgres -c "SELECT 1 FROM pg_database WHERE datname='keycloak'" -t) 2>$null
-    if ($result -and $result.Trim() -eq "1") {
-        $dbExists = $true
-        Write-Host "Cơ sở dữ liệu keycloak đã tồn tại" -ForegroundColor Green
-    }
-    
-    if (-not $dbExists) {
-        Write-Host "Tạo cơ sở dữ liệu keycloak..." -ForegroundColor Yellow
-        & psql -U postgres -c "CREATE DATABASE keycloak"
-    }
-}
+# Tạo file .env.local cho frontend
+$envContent = @"
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080
+NEXT_PUBLIC_KEYCLOAK_REALM=gradeview
+NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=gradeview-frontend
+"@
+$envContent | Out-File -FilePath "frontend\.env.local" -Encoding UTF8
 
-# Chạy Keycloak
-function Start-Keycloak {
-    Write-Host "Khởi động Keycloak..." -ForegroundColor Cyan
-    
-    $env:KC_DB="postgres"
-    $env:KC_DB_URL="jdbc:postgresql://localhost:5432/keycloak"
-    $env:KC_DB_USERNAME="postgres"
-    $env:KC_DB_PASSWORD="3147"
-    $env:KEYCLOAK_ADMIN="admin"
-    $env:KEYCLOAK_ADMIN_PASSWORD="admin"
-    
-    $keycloakProcess = Start-Process -FilePath ".\keycloak-26.2.4\bin\kc.bat" -ArgumentList "start-dev", "--import-realm", "--http-port=8080" -PassThru -NoNewWindow -RedirectStandardOutput ".\logs\keycloak.log"
-    return $keycloakProcess
-}
+Start-Process -FilePath "cmd" -ArgumentList "/c", "cd frontend && npm install && npm run dev" -WindowStyle Normal
 
-# Chạy Backend
-function Start-Backend {
-    Write-Host "Khởi động Backend..." -ForegroundColor Cyan
-    
-    # Đặt biến môi trường cho Backend
-    $env:PORT="5000"
-    $env:DB_HOST="localhost"
-    $env:DB_PORT="5432"
-    $env:DB_NAME="gradeview"
-    $env:DB_USER="postgres"
-    $env:DB_PASSWORD="3147"
-    $env:KEYCLOAK_URL="http://localhost:8080"
-    $env:KEYCLOAK_REALM="gradeview"
-    $env:KEYCLOAK_CLIENT_ID="gradeview-backend"
-    
-    Push-Location ".\backend"
-    
-    # Kiểm tra node_modules
-    if (-not (Test-Path -Path ".\node_modules")) {
-        Write-Host "Cài đặt dependencies cho Backend..." -ForegroundColor Yellow
-        & npm install
-    }
-    
-    $backendProcess = Start-Process -FilePath "npm" -ArgumentList "start" -PassThru -NoNewWindow -RedirectStandardOutput "..\logs\backend.log"
-    
-    Pop-Location
-    return $backendProcess
-}
+Write-Host "`nHoàn tất! Các dịch vụ đang chạy:" -ForegroundColor Green
+Write-Host "- Keycloak: http://localhost:8080" -ForegroundColor Cyan
+Write-Host "- Backend: http://localhost:5000" -ForegroundColor Cyan  
+Write-Host "- Frontend: http://localhost:3000" -ForegroundColor Cyan
 
-# Chạy Frontend
-function Start-Frontend {
-    Write-Host "Khởi động Frontend..." -ForegroundColor Cyan
-    
-    # Đặt biến môi trường cho Frontend
-    $env:PORT="3000"
-    $env:NEXT_PUBLIC_API_URL="http://localhost:5000/api"
-    $env:NEXT_PUBLIC_KEYCLOAK_URL="http://localhost:8080"
-    $env:NEXT_PUBLIC_KEYCLOAK_REALM="gradeview"
-    $env:NEXT_PUBLIC_KEYCLOAK_CLIENT_ID="gradeview-frontend"
-    
-    Push-Location ".\frontend"
-    
-    # Kiểm tra node_modules
-    if (-not (Test-Path -Path ".\node_modules")) {
-        Write-Host "Cài đặt dependencies cho Frontend..." -ForegroundColor Yellow
-        & npm install
-    }
-    
-    $frontendProcess = Start-Process -FilePath "npm" -ArgumentList "run", "dev" -PassThru -NoNewWindow -RedirectStandardOutput "..\logs\frontend.log"
-    
-    Pop-Location
-    return $frontendProcess
-}
+Write-Host "`nNếu Frontend không khởi động, kiểm tra cửa sổ terminal của nó!" -ForegroundColor Yellow
+Write-Host "Nhấn phím bất kỳ để thoát..." -ForegroundColor White
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 
-# Chạy tất cả dịch vụ
-Write-Host "===== Bắt đầu khởi động tất cả dịch vụ GradeView =====" -ForegroundColor Magenta
-
-# Chuẩn bị cơ sở dữ liệu
-Setup-Database
-
-# Chạy Keycloak
-$keycloakProcess = Start-Keycloak
-
-# Đợi Keycloak khởi động
-Write-Host "Đợi Keycloak khởi động (30 giây)..." -ForegroundColor Yellow
-Start-Sleep -Seconds 30
-
-# Chạy Backend
-$backendProcess = Start-Backend
-
-# Đợi Backend khởi động
-Write-Host "Đợi Backend khởi động (10 giây)..." -ForegroundColor Yellow
-Start-Sleep -Seconds 10
-
-# Chạy Frontend
-$frontendProcess = Start-Frontend
-
-Write-Host "`nTất cả dịch vụ đã được khởi động!" -ForegroundColor Green
-Write-Host "Keycloak: http://localhost:8080 (Admin Console: http://localhost:8080/admin)" -ForegroundColor Cyan
-Write-Host "Backend: http://localhost:5000" -ForegroundColor Cyan
-Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan
-Write-Host "`nLogs được lưu trong thư mục ./logs" -ForegroundColor Cyan
-Write-Host "`nẤn Ctrl+C để dừng tất cả dịch vụ" -ForegroundColor Yellow
-
-# Theo dõi và đợi người dùng dừng script
-try {
-    # Đợi người dùng nhấn Ctrl+C
-    Wait-Event -Timeout ([int]::MaxValue)
-} 
-finally {
-    # Dừng các tiến trình khi người dùng dừng script
-    Write-Host "`nĐang dừng tất cả dịch vụ..." -ForegroundColor Magenta
-    
-    if ($frontendProcess -and -not $frontendProcess.HasExited) {
-        Stop-Process -Id $frontendProcess.Id -Force
-        Write-Host "Đã dừng Frontend" -ForegroundColor Green
-    }
-    
-    if ($backendProcess -and -not $backendProcess.HasExited) {
-        Stop-Process -Id $backendProcess.Id -Force
-        Write-Host "Đã dừng Backend" -ForegroundColor Green
-    }
-    
-    if ($keycloakProcess -and -not $keycloakProcess.HasExited) {
-        Stop-Process -Id $keycloakProcess.Id -Force
-        Write-Host "Đã dừng Keycloak" -ForegroundColor Green
-    }
-    
-    Write-Host "Tất cả dịch vụ đã được dừng thành công" -ForegroundColor Green
-} 
+# Dừng tất cả
+Write-Host "Đang dừng dịch vụ..." -ForegroundColor Red
+Get-Process -Name "java", "node" -ErrorAction SilentlyContinue | Stop-Process -Force
+Write-Host "Đã dừng!" -ForegroundColor Green

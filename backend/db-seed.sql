@@ -1,12 +1,6 @@
--- Xóa dữ liệu từ bảng subjects nhưng giữ lại ID để tránh xung đột với dữ liệu liên kết hiện có
--- Cách này an toàn hơn vì nó không làm mất liên kết với các bảng khác
-DELETE FROM subjects WHERE TRUE;
+TRUNCATE TABLE subjects CASCADE; 
 
--- Nếu bạn muốn reset ID sequence, hãy bỏ comment dòng dưới đây
--- Lưu ý: Điều này có thể gây ra xung đột với dữ liệu hiện có nếu có tham chiếu
--- ALTER SEQUENCE subjects_id_seq RESTART WITH 1;
-
--- Insert subjects
+-- Insert subjects (giữ nguyên phần này)
 INSERT INTO subjects (name, code, credits, "createdAt", "updatedAt")
 VALUES 
   ('Toán cao cấp', 'MATH101', 3, NOW(), NOW()),

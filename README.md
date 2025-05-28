@@ -23,13 +23,29 @@ Hệ thống bao gồm:
 ### 2.2. Khởi động hệ thống
 
 ```bash
-# Clone dự án (nếu chưa có)
-git clone <repository-url> grade_view
-cd grade_view
-
-# Chạy hệ thống với Docker
-docker-compose up -d
+git clone https://github.com/nam091/Grade_View.git
+cd Grade_View
 ```
+
+### 2.3. Yêu cầu cài đặt
+#### 2.3.1. Cài đặt PostgreSQL
+
+- Tải và cài đặt PostgreSQL từ trang chủ: https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
+- Cài đặt Java JDK: https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html
+
+##### Đối với cài đặt PostgreSQL
+- Chọn phiên bản 17
+- Thêm vào PATH
+- Tạo database gradeview
+- Cấu hình với cổng `5432` (mặc định)
+- Tạo user `postgres` với password `3147` (mặc định là vậy, còn nếu muốn tự tạo mật khẩu và user name thì phải thay đổi trong các file .env)
+- Tạo database gradeview với user postgres
+- Khởi động PostgreSQL
+
+##### Đối với cài đặt Java JDK
+- Chọn phiên bản 21
+- Thêm vào PATH
+
 
 Sau khi khởi động, các dịch vụ sẽ hoạt động tại:
 - Frontend: http://localhost:3000
@@ -94,8 +110,9 @@ Sau khi khởi động, các dịch vụ sẽ hoạt động tại:
      - Nhấp "Next"
 5. Nhấp "Save"
 6. Lấy Client Secret:
-   - Vào tab "Credentials"
-   - Lưu lại giá trị "Client secret" - đây là khóa cần thiết để backend xác thực với Keycloak
+   - Vào tab `Credentials`
+   - Lưu lại giá trị `Client secret` 
+   - Đây là khóa cần thiết để backend xác thực với Keycloak
 
 ### 3.5. Tạo Roles
 
@@ -144,7 +161,7 @@ DB_HOST=postgres
 DB_PORT=5432
 DB_NAME=gradeview
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=3147
 KEYCLOAK_URL=http://keycloak:8080
 KEYCLOAK_REALM=gradeview
 KEYCLOAK_CLIENT_ID=gradeview-backend
@@ -152,7 +169,7 @@ KEYCLOAK_CLIENT_SECRET=<your-client-secret>
 SESSION_SECRET=<random-session-secret>
 ```
 
-Thay `<your-client-secret>` bằng Client Secret của `gradeview-backend` đã lấy từ Keycloak.
+Thay `<your-client-secret>` bằng Client Secret của `gradeview` đã lấy từ `Realm Settings` -> `Keys` -> Copy giá trị tại cột `Kid` và hàng `RSA256`
 
 ### 4.2. Biến môi trường Frontend
 
